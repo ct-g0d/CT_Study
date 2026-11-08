@@ -104,11 +104,15 @@ export function mountWindowChrome(): void {
 
   try {
     const win = getCurrentWindow();
+    const syncFocus = (focused: boolean) => {
+      for (const { img, lamp, isHover } of layers) {
+        img.src = focused ? (isHover ? lamp.hover : lamp.base) : unfocusedSvg;
+      }
+    };
+    const removeElectronFocus = (window as Window & { macxWindow?: { onFocus?: (callback: (focused: boolean) => void) => () => void } }).macxWindow?.onFocus?.(syncFocus);
     void win
       .onFocusChanged(({ payload }) => {
-        for (const { img, lamp, isHover } of layers) {
-          img.src = payload ? (isHover ? lamp.hover : lamp.base) : unfocusedSvg;
-        }
+        syncFocus(payload);
         void syncMaximizedClass();
       })
       .catch(() => {});
@@ -117,6 +121,7 @@ export function mountWindowChrome(): void {
         void syncMaximizedClass();
       })
       .catch(() => {});
+    void removeElectronFocus;
   } catch {
     // Browser preview: keep the focused traffic-light assets.
   }
